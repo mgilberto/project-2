@@ -28,7 +28,7 @@ type SpeechRecognitionAlternative = {
 }
 
 type SpeechRecognitionErrorEvent = {
-  error: 'no-speech' | 'audio-capture' | 'not-allowed' | string;
+  error: 'no-speech' | 'audio-capture' | 'not-allowed' | 'network' | string;
   message?: string;
 }
 
@@ -195,6 +195,8 @@ export function MindFlow({ tasks, onTasksChange }: MindFlowProps) {
           setError('No speech was detected. Please try speaking again.');
         } else if (event.error === 'audio-capture') {
           setError('No microphone was found. Please ensure your microphone is connected and working.');
+        } else if (event.error === 'network') {
+          setError('Network error occurred. Please ensure you are using HTTPS and have a stable internet connection. If the error persists, try refreshing the page.');
         } else {
           setError(`Speech recognition error: ${event.error}. Please try again.`);
         }
