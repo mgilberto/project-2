@@ -37,24 +37,24 @@ interface PriorityViewProps {
 export function PriorityView({ tasks, onUpdateTask }: PriorityViewProps) {
   const [prioritizedTasks, setPrioritizedTasks] = useState<Task[]>([]);
 
+  // Keep local state in sync with props
   useEffect(() => {
-    console.log('Tasks updated:', tasks);
     setPrioritizedTasks(tasks);
   }, [tasks]);
 
   const onDragEnd = (result: DropResult) => {
     if (!result.destination) return;
-
     const taskId = result.draggableId;
     const newPriority = parseInt(result.destination.droppableId);
-    
-    console.log('Drag end:', { taskId, newPriority });
     onUpdateTask(taskId, newPriority);
   };
 
   const handleTaskSelect = (taskId: string, priority: number) => {
-    console.log('Selecting task:', { taskId, priority });
-    onUpdateTask(taskId, priority);
+    // Find the task in the original tasks array
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+      onUpdateTask(taskId, priority);
+    }
   };
 
   const getPriorityTasks = (priority: number) => {
@@ -62,7 +62,7 @@ export function PriorityView({ tasks, onUpdateTask }: PriorityViewProps) {
   };
 
   const getUnprioritizedTasks = () => {
-    return prioritizedTasks.filter(task => !task.priority || task.priority === 0);
+    return tasks.filter(task => !task.priority);
   };
 
   return (
@@ -115,26 +115,26 @@ export function PriorityView({ tasks, onUpdateTask }: PriorityViewProps) {
                       </Draggable>
                     ))}
                     {provided.placeholder}
-                    
-                    <div className="mt-2">
-                      <select
-                        className="w-full p-2 border rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
-                        onChange={(e) => {
-                          const taskId = e.target.value;
-                          if (taskId) {
-                            handleTaskSelect(taskId, priority);
-                          }
-                        }}
-                        value=""
-                      >
-                        <option value="">Add a task to this priority...</option>
-                        {getUnprioritizedTasks().map((task) => (
-                          <option key={task.id} value={task.id}>
-                            {task.content}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+
+                    <select
+                      className="w-full p-2 border rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
+                      onChange={(e) => {
+                        const selectedTaskId = e.target.value;
+                        if (selectedTaskId) {
+                          handleTaskSelect(selectedTaskId, priority);
+                          // Reset the select after handling the selection
+                          e.target.value = '';
+                        }
+                      }}
+                      value=""
+                    >
+                      <option value="">Add a task to this priority...</option>
+                      {getUnprioritizedTasks().map((task) => (
+                        <option key={task.id} value={task.id}>
+                          {task.content}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               )}

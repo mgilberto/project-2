@@ -65,6 +65,18 @@ export function MindFlow({ tasks, onTasksChange }: MindFlowProps) {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const phrasesRef = useRef<string[]>([]);
   const hasSpokenRef = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll effect
+  useEffect(() => {
+    if (containerRef.current && isListening) {
+      const container = containerRef.current;
+      const lastInput = container.querySelector('.space-y-3 > div:last-child');
+      if (lastInput) {
+        lastInput.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    }
+  }, [phrases, isListening]);
 
   // Keep phrasesRef in sync with phrases state
   useEffect(() => {
@@ -245,7 +257,7 @@ export function MindFlow({ tasks, onTasksChange }: MindFlowProps) {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-4xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-4xl mx-auto" ref={containerRef}>
       <div className="mb-4 sm:mb-6">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">Mind Flow</h2>
         <p className="text-sm sm:text-base text-gray-600 space-y-2">
