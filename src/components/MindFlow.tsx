@@ -58,8 +58,10 @@ export function MindFlow({ tasks, onTasksChange }: MindFlowProps) {
   });
 
   const [isListening, setIsListening] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [interimTranscript, setInterimTranscript] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const phrasesRef = useRef<string[]>([]);
   const hasSpokenRef = useRef(false);
@@ -88,6 +90,46 @@ export function MindFlow({ tasks, onTasksChange }: MindFlowProps) {
       setPhrases(tasks);
     }
   }, [tasks]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
+
+  const startTimer = () => {
+    setTimeLeft(120); // 2 minutes in seconds
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    timerRef.current = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev === null || prev <= 0) {
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const stopTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    setTimeLeft(null);
+  };
+
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const updatePhrases = (newPhrases: string[], keepEmpty: boolean = false) => {
     // Only clean up empty fields if keepEmpty is false
@@ -155,6 +197,7 @@ export function MindFlow({ tasks, onTasksChange }: MindFlowProps) {
   const startListening = async () => {
     setError(null);
     hasSpokenRef.current = false;
+    startTimer();
     console.log('=== Speech Recognition Debug Log ===');
     console.log('1. Starting recognition process');
     
@@ -308,19 +351,20 @@ export function MindFlow({ tasks, onTasksChange }: MindFlowProps) {
   };
 
   const stopListening = () => {
-    console.log('19. Stopping recognition');
     if (recognitionRef.current) {
       recognitionRef.current.stop();
+      setIsListening(false);
+      stopTimer();
     }
-    setIsListening(false);
-    setInterimTranscript('');
   };
 
   return (
     <div className="p-4 sm:p-6 max-w-4xl mx-auto">
       <div className="mb-4 sm:mb-6">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">Mind Flow</h2>
-        <p className="text-sm sm:text-base text-gray-600">Speak your tasks. Each task will be captured in a new field.</p>
+        <p className="text-sm sm:text-base text-gray-600">
+          Take 2 minutes to say all of the tasks you can think of that you want to work on this week. Each task will be captured in a new field.
+        </p>
       </div>
 
       <div className="space-y-3">
@@ -355,28 +399,37 @@ export function MindFlow({ tasks, onTasksChange }: MindFlowProps) {
             Add New Task
           </button>
 
-          <button
-            onClick={isListening ? stopListening : startListening}
-            className={`flex items-center justify-center gap-2 px-4 py-3 sm:py-2 text-white rounded-lg transition-colors touch-manipulation ${
-              isListening 
-                ? 'bg-red-500 hover:bg-red-600 active:bg-red-700' 
-                : 'bg-purple-500 hover:bg-purple-600 active:bg-purple-700'
-            }`}
-            title={isListening ? 'Stop listening' : 'Start listening'}
-            disabled={!!error}
-          >
-            {isListening ? (
-              <>
-                <MicOff className="w-5 h-5 sm:w-4 sm:h-4" />
-                Stop Recording
-              </>
-            ) : (
-              <>
-                <Mic className="w-5 h-5 sm:w-4 sm:h-4" />
-                Start Recording
-              </>
+          <div className="flex flex-col items-center gap-2">
+            {timeLeft !== null && (
+              <div className={`text-lg font-medium ${
+                timeLeft <= 30 ? 'text-red-500' : 'text-purple-600'
+              }`}>
+                {formatTime(timeLeft)}
+              </div>
             )}
-          </button>
+            <button
+              onClick={isListening ? stopListening : startListening}
+              className={`flex items-center justify-center gap-2 px-4 py-3 sm:py-2 text-white rounded-lg transition-colors touch-manipulation w-full ${
+                isListening 
+                  ? 'bg-red-500 hover:bg-red-600 active:bg-red-700' 
+                  : 'bg-purple-500 hover:bg-purple-600 active:bg-purple-700'
+              }`}
+              title={isListening ? 'Stop listening' : 'Start listening'}
+              disabled={!!error}
+            >
+              {isListening ? (
+                <>
+                  <MicOff className="w-5 h-5 sm:w-4 sm:h-4" />
+                  Stop Recording
+                </>
+              ) : (
+                <>
+                  <Mic className="w-5 h-5 sm:w-4 sm:h-4" />
+                  Start Recording
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
