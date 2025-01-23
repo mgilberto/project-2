@@ -131,69 +131,6 @@ export function MindFlow({ tasks, onTasksChange }: MindFlowProps) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const updatePhrases = (newPhrases: string[], keepEmpty: boolean = false) => {
-    // Only clean up empty fields if keepEmpty is false
-    let finalPhrases = [...newPhrases];
-    if (!keepEmpty) {
-      // Keep only non-empty phrases and the last empty field if it exists
-      const nonEmptyPhrases = finalPhrases.filter((p, i) => 
-        p?.trim() || (i === finalPhrases.length - 1 && isListening)
-      );
-      finalPhrases = nonEmptyPhrases;
-    }
-    
-    // Update both the ref and the state
-    phrasesRef.current = finalPhrases;
-    setPhrases(finalPhrases);
-    
-    // Notify parent of changes, filtering out empty phrases
-    const nonEmptyPhrases = finalPhrases.filter(p => p?.trim());
-    onTasksChange(nonEmptyPhrases);
-    
-    console.log('Updated phrases:', {
-      finalPhrases,
-      nonEmptyPhrases,
-      keepEmpty
-    });
-  };
-
-  const addEmptyField = () => {
-    const currentPhrases = [...phrasesRef.current];
-    currentPhrases.push('');
-    const newIndex = currentPhrases.length - 1;
-    console.log('Adding empty field:', {
-      currentPhrases,
-      newIndex
-    });
-    updatePhrases(currentPhrases, true);
-    return newIndex;
-  };
-
-  const updateField = (index: number, text: string) => {
-    const currentPhrases = [...phrasesRef.current];
-    console.log('Updating field:', {
-      index,
-      text,
-      currentPhrases
-    });
-    
-    // Ensure the index is valid
-    if (index >= 0 && index < currentPhrases.length) {
-      currentPhrases[index] = text;
-      updatePhrases(currentPhrases, true);
-      console.log('Field updated successfully');
-      return true;
-    }
-    
-    console.log('Invalid field index, update failed');
-    return false;
-  };
-
-  const removePhrase = (index: number) => {
-    const newPhrases = phrases.filter((_, i) => i !== index);
-    updatePhrases(newPhrases);
-  };
-
   const startListening = async () => {
     setError(null);
     hasSpokenRef.current = false;
@@ -224,26 +161,25 @@ export function MindFlow({ tasks, onTasksChange }: MindFlowProps) {
         }
 
         if (finalTranscript) {
-          const newPhrases = finalTranscript
-            .trim()
-            .split(/[.!?]+/)
-            .map(phrase => phrase.trim())
-            .filter(phrase => phrase.length > 0);
-
-          if (newPhrases.length > 0) {
-            setPhrases(prev => [...prev, ...newPhrases]);
-          }
+          console.log('Final transcript:', finalTranscript);
+          setPhrases(prev => {
+            const newPhrases = [...prev];
+            // Find the first empty field or add to the end
+            const emptyIndex = newPhrases.findIndex(p => !p.trim());
+            if (emptyIndex !== -1) {
+              newPhrases[emptyIndex] = finalTranscript.trim();
+            } else {
+              newPhrases.push(finalTranscript.trim());
+            }
+            return newPhrases;
+          });
         }
 
         setInterimTranscript(interimTranscript);
       };
 
       recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
-        console.error('10. Recognition error:', {
-          error: event.error,
-          message: event.message
-        });
-        
+        console.error('Recognition error:', event);
         if (event.error === 'not-allowed') {
           setError('Microphone access was denied. Please allow microphone access in your browser settings and try again.');
         } else if (event.error === 'no-speech') {
@@ -251,7 +187,7 @@ export function MindFlow({ tasks, onTasksChange }: MindFlowProps) {
         } else if (event.error === 'audio-capture') {
           setError('No microphone was found. Please ensure your microphone is connected and working.');
         } else if (event.error === 'network') {
-          setError('Network error occurred. Please ensure you are using HTTPS and have a stable internet connection. If the error persists, try refreshing the page.');
+          setError('Network error occurred. Please ensure you are using HTTPS and have a stable internet connection.');
         } else {
           setError(`Speech recognition error: ${event.error}. Please try again.`);
         }
@@ -259,9 +195,19 @@ export function MindFlow({ tasks, onTasksChange }: MindFlowProps) {
       };
 
       recognitionRef.current.onstart = () => {
-        console.log('9. Recognition started - speak now');
+        console.log('Recognition started');
         setIsListening(true);
         setError(null);
+      };
+
+      recognitionRef.current.onend = () => {
+        console.log('Recognition ended');
+        if (isListening) {
+          recognitionRef.current?.start();
+        } else {
+          // Clean up empty fields only when stopping
+          setPhrases(prev => prev.filter(phrase => phrase.trim()));
+        }
       };
 
       recognitionRef.current.start();
@@ -276,7 +222,26 @@ export function MindFlow({ tasks, onTasksChange }: MindFlowProps) {
       recognitionRef.current.stop();
       setIsListening(false);
       stopTimer();
+      setInterimTranscript('');
+      // Clean up empty fields
+      setPhrases(prev => prev.filter(phrase => phrase.trim()));
     }
+  };
+
+  const addEmptyField = () => {
+    setPhrases(prev => [...prev, '']);
+  };
+
+  const updateField = (index: number, text: string) => {
+    setPhrases(prev => {
+      const newPhrases = [...prev];
+      newPhrases[index] = text;
+      return newPhrases;
+    });
+  };
+
+  const removePhrase = (index: number) => {
+    setPhrases(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
