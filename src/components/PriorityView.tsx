@@ -35,60 +35,26 @@ interface PriorityViewProps {
 }
 
 export function PriorityView({ tasks, onUpdateTask }: PriorityViewProps) {
-  const [prioritizedTasks, setPrioritizedTasks] = useState<Task[]>(() => {
-    const savedPriorities = localStorage.getItem('hippoplan_task_priorities');
-    const savedTasks = savedPriorities ? JSON.parse(savedPriorities) : null;
-    
-    if (savedTasks) {
-      // Merge saved priorities with current tasks
-      const taskMap = new Map(tasks.map(task => [task.id, task]));
-      return savedTasks.filter((task: Task) => taskMap.has(task.id));
-    }
-    
-    return tasks;
-  });
+  const [prioritizedTasks, setPrioritizedTasks] = useState<Task[]>([]);
 
-  // Persist priorities to localStorage
   useEffect(() => {
-    localStorage.setItem('hippoplan_task_priorities', JSON.stringify(prioritizedTasks));
-  }, [prioritizedTasks]);
-
-  // Update local state when tasks change
-  useEffect(() => {
-    setPrioritizedTasks(prevTasks => {
-      const taskMap = new Map(prevTasks.map(task => [task.id, task]));
-      const newTasks = tasks.filter(task => !taskMap.has(task.id));
-      return [...prevTasks, ...newTasks];
-    });
+    console.log('Tasks updated:', tasks);
+    setPrioritizedTasks(tasks);
   }, [tasks]);
 
   const onDragEnd = (result: DropResult) => {
     if (!result.destination) return;
 
-    const sourceIndex = result.source.index;
-    const destinationIndex = result.destination.index;
-    const sourceDroppableId = result.source.droppableId;
-    const destinationDroppableId = result.destination.droppableId;
-
-    const newPriority = parseInt(destinationDroppableId);
     const taskId = result.draggableId;
-
-    const updatedTasks = [...prioritizedTasks];
-    const [removed] = updatedTasks.splice(sourceIndex, 1);
-    updatedTasks.splice(destinationIndex, 0, { ...removed, priority: newPriority });
-
-    setPrioritizedTasks(updatedTasks);
+    const newPriority = parseInt(result.destination.droppableId);
+    
+    console.log('Drag end:', { taskId, newPriority });
     onUpdateTask(taskId, newPriority);
   };
 
   const handleTaskSelect = (taskId: string, priority: number) => {
-    const task = prioritizedTasks.find(t => t.id === taskId);
-    if (task) {
-      setPrioritizedTasks(prevTasks => 
-        prevTasks.map(t => t.id === taskId ? { ...t, priority } : t)
-      );
-      onUpdateTask(taskId, priority);
-    }
+    console.log('Selecting task:', { taskId, priority });
+    onUpdateTask(taskId, priority);
   };
 
   const getPriorityTasks = (priority: number) => {
@@ -149,6 +115,7 @@ export function PriorityView({ tasks, onUpdateTask }: PriorityViewProps) {
                       </Draggable>
                     ))}
                     {provided.placeholder}
+                    
                     <div className="mt-2">
                       <select
                         className="w-full p-2 border rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"

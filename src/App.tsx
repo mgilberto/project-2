@@ -72,9 +72,14 @@ function App() {
   };
 
   const updateTaskPriority = (taskId: string, priority: number) => {
-    setTasks(tasks.map(task =>
-      task.id === taskId ? { ...task, priority: priority as 1 | 2 | 3 | 4 } : task
-    ));
+    console.log('Updating task priority:', { taskId, priority });
+    setTasks(prevTasks => 
+      prevTasks.map(task =>
+        task.id === taskId 
+          ? { ...task, priority } 
+          : task
+      )
+    );
   };
 
   const scheduleTask = (day: string, period: 'am' | 'pm', slot: number, taskId: string) => {
