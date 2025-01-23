@@ -293,13 +293,13 @@ export function MindFlow({ tasks, onTasksChange }: MindFlowProps) {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Mind Flow</h2>
-        <p className="text-gray-600">Speak your tasks. Each task will be captured in a new field.</p>
+    <div className="p-4 sm:p-6 max-w-4xl mx-auto">
+      <div className="mb-4 sm:mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">Mind Flow</h2>
+        <p className="text-sm sm:text-base text-gray-600">Speak your tasks. Each task will be captured in a new field.</p>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         {phrases.map((phrase, index) => (
           <div key={`phrase-${index}`} className="flex gap-2">
             <input
@@ -309,46 +309,46 @@ export function MindFlow({ tasks, onTasksChange }: MindFlowProps) {
                 const text = e.target.value;
                 updateField(index, text);
               }}
-              className="flex-1 p-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="flex-1 p-3 sm:p-2 text-base sm:text-sm border rounded-lg shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               placeholder="Speak or type your task..."
             />
             <button
               onClick={() => removePhrase(index)}
-              className="p-2 text-red-500 hover:text-red-600"
+              className="p-3 sm:p-2 text-red-500 hover:text-red-600 touch-manipulation"
               title="Remove task"
             >
-              <Trash2 className="w-5 h-5" />
+              <Trash2 className="w-6 h-6 sm:w-5 sm:h-5" />
             </button>
           </div>
         ))}
 
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 mt-4">
           <button
             onClick={addEmptyField}
-            className="flex items-center gap-2 px-4 py-2 text-purple-600 border border-purple-300 rounded-lg hover:bg-purple-50"
+            className="flex items-center justify-center gap-2 px-4 py-3 sm:py-2 text-purple-600 border border-purple-300 rounded-lg hover:bg-purple-50 active:bg-purple-100 touch-manipulation"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-5 h-5 sm:w-4 sm:h-4" />
             Add New Task
           </button>
 
           <button
             onClick={isListening ? stopListening : startListening}
-            className={`flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-colors ${
+            className={`flex items-center justify-center gap-2 px-4 py-3 sm:py-2 text-white rounded-lg transition-colors touch-manipulation ${
               isListening 
-                ? 'bg-red-500 hover:bg-red-600' 
-                : 'bg-purple-500 hover:bg-purple-600'
+                ? 'bg-red-500 hover:bg-red-600 active:bg-red-700' 
+                : 'bg-purple-500 hover:bg-purple-600 active:bg-purple-700'
             }`}
             title={isListening ? 'Stop listening' : 'Start listening'}
             disabled={!!error}
           >
             {isListening ? (
               <>
-                <MicOff className="w-4 h-4" />
+                <MicOff className="w-5 h-5 sm:w-4 sm:h-4" />
                 Stop Recording
               </>
             ) : (
               <>
-                <Mic className="w-4 h-4" />
+                <Mic className="w-5 h-5 sm:w-4 sm:h-4" />
                 Start Recording
               </>
             )}
@@ -357,13 +357,13 @@ export function MindFlow({ tasks, onTasksChange }: MindFlowProps) {
       </div>
 
       {isListening && interimTranscript && (
-        <div className="mt-4 p-2 bg-purple-100 text-purple-700 rounded-md text-sm">
+        <div className="mt-4 p-3 sm:p-2 bg-purple-100 text-purple-700 rounded-md text-sm sm:text-base">
           Listening... <span className="italic">{interimTranscript}</span>
         </div>
       )}
 
       {error && (
-        <div className="mt-4 p-2 bg-red-100 text-red-700 rounded-md text-sm">
+        <div className="mt-4 p-3 sm:p-2 bg-red-100 text-red-700 rounded-md text-sm sm:text-base">
           {error}
         </div>
       )}
