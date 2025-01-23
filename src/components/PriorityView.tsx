@@ -82,12 +82,13 @@ export function PriorityView({ tasks, onUpdateTask }: PriorityViewProps) {
   };
 
   const handleTaskSelect = (taskId: string, priority: number) => {
-    setPrioritizedTasks(prevTasks => {
-      return prevTasks.map(task => 
-        task.id === taskId ? { ...task, priority } : task
+    const task = prioritizedTasks.find(t => t.id === taskId);
+    if (task) {
+      setPrioritizedTasks(prevTasks => 
+        prevTasks.map(t => t.id === taskId ? { ...t, priority } : t)
       );
-    });
-    onUpdateTask(taskId, priority);
+      onUpdateTask(taskId, priority);
+    }
   };
 
   const getPriorityTasks = (priority: number) => {
@@ -95,14 +96,14 @@ export function PriorityView({ tasks, onUpdateTask }: PriorityViewProps) {
   };
 
   const getUnprioritizedTasks = () => {
-    return prioritizedTasks.filter(task => !task.priority);
+    return prioritizedTasks.filter(task => !task.priority || task.priority === 0);
   };
 
   return (
     <div className="p-4 sm:p-6 max-w-4xl mx-auto">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-800 mb-2">Prioritize Tasks</h2>
-        <p className="text-gray-600">Drag and drop tasks to set their priority level.</p>
+        <p className="text-gray-600">Drag and drop tasks to set their priority level, or use the dropdowns to assign priorities.</p>
       </div>
 
       <DragDropContext onDragEnd={onDragEnd}>
@@ -147,25 +148,27 @@ export function PriorityView({ tasks, onUpdateTask }: PriorityViewProps) {
                         )}
                       </Draggable>
                     ))}
-                    <select
-                      value=""
-                      onChange={(e) => {
-                        const taskId = e.target.value;
-                        if (taskId) {
-                          handleTaskSelect(taskId, priority);
-                        }
-                      }}
-                      className="w-full p-2 mt-2 border rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
-                    >
-                      <option value="">Add a task to this priority...</option>
-                      {getUnprioritizedTasks().map((task) => (
-                        <option key={task.id} value={task.id}>
-                          {task.content}
-                        </option>
-                      ))}
-                    </select>
+                    {provided.placeholder}
+                    <div className="mt-2">
+                      <select
+                        className="w-full p-2 border rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
+                        onChange={(e) => {
+                          const taskId = e.target.value;
+                          if (taskId) {
+                            handleTaskSelect(taskId, priority);
+                          }
+                        }}
+                        value=""
+                      >
+                        <option value="">Add a task to this priority...</option>
+                        {getUnprioritizedTasks().map((task) => (
+                          <option key={task.id} value={task.id}>
+                            {task.content}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                  {provided.placeholder}
                 </div>
               )}
             </Droppable>
