@@ -144,30 +144,29 @@ function App() {
 
       <main 
         {...swipeHandlers}
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-16 relative"
+        className="max-w-7xl mx-auto py-8 mt-16 relative overflow-x-hidden"
       >
         <div className="overflow-hidden">
           <div 
-            className="transition-transform duration-300 ease-in-out"
+            className="transition-transform duration-300 ease-in-out flex"
             style={{
               transform: `translateX(-${currentViewIndex * 100}%)`,
-              width: '300%',
-              display: 'flex'
+              width: '300%'
             }}
           >
-            <div className="w-full min-w-full">
+            <div className="w-full px-4 sm:px-6 lg:px-8 flex-shrink-0">
               <MindFlow
                 tasks={tasks.map(t => t.content)}
                 onTasksChange={handleTasksChange}
               />
             </div>
-            <div className="w-full min-w-full">
+            <div className="w-full px-4 sm:px-6 lg:px-8 flex-shrink-0">
               <PriorityView
                 tasks={tasks}
                 onUpdateTask={updateTaskPriority}
               />
             </div>
-            <div className="w-full min-w-full">
+            <div className="w-full px-4 sm:px-6 lg:px-8 flex-shrink-0">
               <WeeklySchedule
                 tasks={tasks}
                 schedule={schedule}
