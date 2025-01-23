@@ -54,25 +54,31 @@ function App() {
 
   const currentViewIndex = views.findIndex(v => v.id === currentView);
 
-  const handleTasksChange = (newTasks: string[]) => {
+  const handleTasksChange = (newTaskContents: string[]) => {
     setTasks(prevTasks => {
-      const existingTasksMap = new Map(prevTasks.map(task => [task.content, task]));
-      
-      return newTasks.map(content => {
+      // Create a map of existing tasks by content for quick lookup
+      const existingTasksMap = new Map(
+        prevTasks.map(task => [task.content, task])
+      );
+
+      // Map new contents to tasks, preserving existing tasks when possible
+      const newTasks = newTaskContents.map(content => {
         const existingTask = existingTasksMap.get(content);
         if (existingTask) {
           return existingTask;
         }
         return {
           id: Math.random().toString(36).substr(2, 9),
-          content
+          content,
+          priority: 0 // Initialize with no priority
         };
       });
+
+      return newTasks;
     });
   };
 
   const updateTaskPriority = (taskId: string, priority: number) => {
-    console.log('Updating task priority:', { taskId, priority });
     setTasks(prevTasks => 
       prevTasks.map(task =>
         task.id === taskId 
