@@ -201,56 +201,44 @@ export function MindFlow({ tasks, onTasksChange }: MindFlowProps) {
     console.log('=== Speech Recognition Debug Log ===');
     console.log('1. Starting recognition process');
     
-    if (!('webkitSpeechRecognition' in window)) {
-      console.error('Browser does not support webkitSpeechRecognition');
-      setError('Speech recognition is not supported in your browser. Please use Chrome.');
-      return;
-    }
-    console.log('2. Browser supports speech recognition');
-
     try {
-      console.log('3. Requesting microphone permission');
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach(track => track.stop());
-      console.log('4. Microphone permission granted');
-    } catch (err) {
-      console.error('5. Microphone permission error:', err);
-      setError('Please allow microphone access to use speech recognition. Click the camera icon in your browser\'s address bar to enable it.');
-      return;
-    }
-
-    try {
-      if (recognitionRef.current) {
-        console.log('6. Stopping existing recognition');
-        recognitionRef.current.stop();
+      if (!recognitionRef.current) {
+        recognitionRef.current = new (window as any).webkitSpeechRecognition();
       }
 
-      console.log('7. Creating new recognition instance');
-      const recognition = new (window as any).webkitSpeechRecognition();
-      recognitionRef.current = recognition;
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
 
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'en-US';
+      recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
 
-      console.log('8. Recognition configured:', {
-        continuous: recognition.continuous,
-        interimResults: recognition.interimResults,
-        lang: recognition.lang
-      });
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+            hasSpokenRef.current = true;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
 
-      let currentFieldIndex = -1;
+        if (finalTranscript) {
+          const newPhrases = finalTranscript
+            .trim()
+            .split(/[.!?]+/)
+            .map(phrase => phrase.trim())
+            .filter(phrase => phrase.length > 0);
 
-      recognition.onstart = () => {
-        console.log('9. Recognition started - speak now');
-        setIsListening(true);
-        setError(null);
-        // Create initial empty field
-        currentFieldIndex = addEmptyField();
-        console.log('Created initial field at index:', currentFieldIndex);
+          if (newPhrases.length > 0) {
+            setPhrases(prev => [...prev, ...newPhrases]);
+          }
+        }
+
+        setInterimTranscript(interimTranscript);
       };
 
-      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
         console.error('10. Recognition error:', {
           error: event.error,
           message: event.message
@@ -270,83 +258,16 @@ export function MindFlow({ tasks, onTasksChange }: MindFlowProps) {
         stopListening();
       };
 
-      recognition.onend = () => {
-        console.log('11. Recognition ended');
-        
-        // If we're still supposed to be listening, restart recognition
-        if (isListening) {
-          console.log('Restarting recognition...');
-          recognition.start();
-          return;
-        }
-        
-        setIsListening(false);
-        setInterimTranscript('');
-        
-        // Clean up any empty fields when stopping
-        console.log('Cleaning up empty fields...');
-        const newPhrases = phrasesRef.current.filter(phrase => phrase?.trim());
-        updatePhrases(newPhrases, false);
+      recognitionRef.current.onstart = () => {
+        console.log('9. Recognition started - speak now');
+        setIsListening(true);
+        setError(null);
       };
 
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
-        console.log('12. Got speech result:', {
-          resultCount: event.results?.length,
-          resultIndex: event.resultIndex,
-          currentField: currentFieldIndex,
-          phrases: phrasesRef.current,
-          results: Array.from(event.results).map(result => ({
-            isFinal: result.isFinal,
-            transcript: result[0]?.transcript
-          }))
-        });
-
-        if (!event.results?.length) {
-          console.log('No results found in event');
-          return;
-        }
-
-        // Handle each result
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const result = event.results[i];
-          
-          if (result.isFinal) {
-            const text = result[0].transcript.trim();
-            if (!text) {
-              console.log('Skipping empty result');
-              continue;
-            }
-            
-            console.log('13. Final text received:', text);
-            console.log('Current field index:', currentFieldIndex);
-            
-            // Update the current field with the text
-            if (currentFieldIndex !== -1) {
-              const updated = updateField(currentFieldIndex, text);
-              if (updated) {
-                console.log('14. Updated field', currentFieldIndex, 'with text:', text);
-                
-                // Create a new field for the next phrase
-                currentFieldIndex = addEmptyField();
-                console.log('15. Created new field at index:', currentFieldIndex);
-                hasSpokenRef.current = true;
-              }
-            }
-          } else {
-            const interimText = result[0].transcript;
-            console.log('16. Interim text:', interimText);
-            setInterimTranscript(interimText);
-          }
-        }
-      };
-
-      console.log('17. Starting recognition...');
-      recognition.start();
-      
+      recognitionRef.current.start();
     } catch (error) {
-      console.error('18. Error initializing speech recognition:', error);
-      setError('Error starting speech recognition. Please try again.');
-      setIsListening(false);
+      console.error('Error starting recognition:', error);
+      setError('Could not start speech recognition. Please ensure you are using a supported browser.');
     }
   };
 
@@ -362,8 +283,10 @@ export function MindFlow({ tasks, onTasksChange }: MindFlowProps) {
     <div className="p-4 sm:p-6 max-w-4xl mx-auto">
       <div className="mb-4 sm:mb-6">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">Mind Flow</h2>
-        <p className="text-sm sm:text-base text-gray-600">
-          Take 2 minutes to say all of the tasks you can think of that you want to work on this week. Each task will be captured in a new field.
+        <p className="text-sm sm:text-base text-gray-600 space-y-2">
+          <span className="block">Take 2 minutes to say all of the tasks you can think of that you want to work on this week.</span>
+          <span className="block">Each task will be captured in a new field.</span>
+          <span className="block">Don't worry about getting everything perfect - you can edit the tasks when you're done.</span>
         </p>
       </div>
 
@@ -401,9 +324,7 @@ export function MindFlow({ tasks, onTasksChange }: MindFlowProps) {
 
           <div className="flex flex-col items-center gap-2">
             {timeLeft !== null && (
-              <div className={`text-lg font-medium ${
-                timeLeft <= 30 ? 'text-red-500' : 'text-purple-600'
-              }`}>
+              <div className={`text-lg font-medium text-teal-600`}>
                 {formatTime(timeLeft)}
               </div>
             )}

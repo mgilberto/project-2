@@ -44,7 +44,27 @@ export function WeeklySchedule({ tasks, schedule, onScheduleTask }: WeeklySchedu
     <div className="max-w-4xl mx-auto">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-800 mb-4">Weekly Schedule</h2>
-        
+
+        {/* Task Priority Legend */}
+        <div className="mb-4 p-4 bg-white rounded-lg shadow-sm">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Task Priority</h3>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {[1, 2, 3, 4].map(priority => (
+              <div key={priority} className="flex items-center">
+                <div className={`w-3 h-3 rounded-full mr-2 ${
+                  priority === 1 ? 'bg-red-500' :
+                  priority === 2 ? 'bg-yellow-500' :
+                  priority === 3 ? 'bg-green-500' :
+                  'bg-gray-300'
+                }`} />
+                <span className="text-sm text-gray-600">
+                  Priority {priority}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Day Navigation - Mobile */}
         <div className="md:hidden">
           <div className="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm mb-4">
