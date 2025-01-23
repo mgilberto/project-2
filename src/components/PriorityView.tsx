@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Task, PrioritySection } from '../types';
 
 const prioritySections: PrioritySection[] = [
@@ -34,6 +34,33 @@ interface PriorityViewProps {
 }
 
 export function PriorityView({ tasks, onUpdateTask }: PriorityViewProps) {
+  const [prioritizedTasks, setPrioritizedTasks] = useState<Task[]>(() => {
+    const savedPriorities = localStorage.getItem('hippoplan_task_priorities');
+    const savedTasks = savedPriorities ? JSON.parse(savedPriorities) : null;
+    
+    if (savedTasks) {
+      // Merge saved priorities with current tasks
+      const taskMap = new Map(tasks.map(task => [task.id, task]));
+      return savedTasks.filter((task: Task) => taskMap.has(task.id));
+    }
+    
+    return tasks;
+  });
+
+  // Persist priorities to localStorage
+  useEffect(() => {
+    localStorage.setItem('hippoplan_task_priorities', JSON.stringify(prioritizedTasks));
+  }, [prioritizedTasks]);
+
+  // Update local state when tasks change
+  useEffect(() => {
+    setPrioritizedTasks(prevTasks => {
+      const taskMap = new Map(prevTasks.map(task => [task.id, task]));
+      const newTasks = tasks.filter(task => !taskMap.has(task.id));
+      return [...prevTasks, ...newTasks];
+    });
+  }, [tasks]);
+
   const getRowColor = (sectionColor: string, index: number) => {
     const opacity = Math.max(0.1, 1 - (index * 0.15));
     return `${sectionColor}${Math.round(opacity * 255).toString(16).padStart(2, '0')}`;
@@ -59,7 +86,7 @@ export function PriorityView({ tasks, onUpdateTask }: PriorityViewProps) {
             </div>
 
             <div className="divide-y">
-              {tasks
+              {prioritizedTasks
                 .filter(task => task.priority === section.id)
                 .map((task, index) => (
                   <div
@@ -71,14 +98,14 @@ export function PriorityView({ tasks, onUpdateTask }: PriorityViewProps) {
                       className="w-full p-2 border rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white bg-opacity-90"
                       value={task.content}
                       onChange={(e) => {
-                        const selectedTask = tasks.find(t => t.content === e.target.value);
+                        const selectedTask = prioritizedTasks.find(t => t.content === e.target.value);
                         if (selectedTask) {
                           onUpdateTask(selectedTask.id, section.id);
                         }
                       }}
                     >
                       <option value="">Select a task</option>
-                      {tasks.map((t) => (
+                      {prioritizedTasks.map((t) => (
                         <option key={t.id} value={t.content}>
                           {t.content}
                         </option>
@@ -92,14 +119,14 @@ export function PriorityView({ tasks, onUpdateTask }: PriorityViewProps) {
                   className="w-full p-2 border rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   value=""
                   onChange={(e) => {
-                    const selectedTask = tasks.find(t => t.content === e.target.value);
+                    const selectedTask = prioritizedTasks.find(t => t.content === e.target.value);
                     if (selectedTask) {
                       onUpdateTask(selectedTask.id, section.id);
                     }
                   }}
                 >
                   <option value="">Add a task to this priority...</option>
-                  {tasks
+                  {prioritizedTasks
                     .filter(t => !t.priority)
                     .map((task) => (
                       <option key={task.id} value={task.content}>

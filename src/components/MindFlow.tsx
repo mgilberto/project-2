@@ -52,9 +52,13 @@ declare global {
 }
 
 export function MindFlow({ tasks, onTasksChange }: MindFlowProps) {
-  const [phrases, setPhrases] = useState<string[]>(tasks || []);
+  const [phrases, setPhrases] = useState<string[]>(() => {
+    const savedPhrases = localStorage.getItem('hippoplan_mindflow_phrases');
+    return savedPhrases ? JSON.parse(savedPhrases) : tasks.length > 0 ? tasks : [''];
+  });
+
   const [isListening, setIsListening] = useState(false);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
   const [interimTranscript, setInterimTranscript] = useState('');
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const phrasesRef = useRef<string[]>([]);
@@ -64,6 +68,26 @@ export function MindFlow({ tasks, onTasksChange }: MindFlowProps) {
   useEffect(() => {
     phrasesRef.current = phrases;
   }, [phrases]);
+
+  // Persist phrases to localStorage
+  useEffect(() => {
+    localStorage.setItem('hippoplan_mindflow_phrases', JSON.stringify(phrases));
+  }, [phrases]);
+
+  // Sync tasks with parent
+  useEffect(() => {
+    const nonEmptyPhrases = phrases.filter(phrase => phrase.trim() !== '');
+    if (nonEmptyPhrases.length > 0 || tasks.length > 0) {
+      onTasksChange(nonEmptyPhrases);
+    }
+  }, [phrases, onTasksChange]);
+
+  // Initialize from tasks if they change externally
+  useEffect(() => {
+    if (tasks.length > 0 && !phrases.some(p => p.trim() !== '')) {
+      setPhrases(tasks);
+    }
+  }, [tasks]);
 
   const updatePhrases = (newPhrases: string[], keepEmpty: boolean = false) => {
     // Only clean up empty fields if keepEmpty is false
@@ -129,7 +153,7 @@ export function MindFlow({ tasks, onTasksChange }: MindFlowProps) {
   };
 
   const startListening = async () => {
-    setError('');
+    setError(null);
     hasSpokenRef.current = false;
     console.log('=== Speech Recognition Debug Log ===');
     console.log('1. Starting recognition process');
@@ -177,7 +201,7 @@ export function MindFlow({ tasks, onTasksChange }: MindFlowProps) {
       recognition.onstart = () => {
         console.log('9. Recognition started - speak now');
         setIsListening(true);
-        setError('');
+        setError(null);
         // Create initial empty field
         currentFieldIndex = addEmptyField();
         console.log('Created initial field at index:', currentFieldIndex);

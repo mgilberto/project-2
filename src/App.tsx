@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Layout, ListTodo, Calendar, Brain, Menu, X } from 'lucide-react';
 import { useSwipeable } from 'react-swipeable';
 import { MindFlow } from './components/MindFlow';
@@ -8,11 +8,43 @@ import { Task, TimeSlot } from './types';
 
 type View = 'mindflow' | 'priority' | 'schedule';
 
+const STORAGE_KEYS = {
+  TASKS: 'hippoplan_tasks',
+  SCHEDULE: 'hippoplan_schedule',
+  CURRENT_VIEW: 'hippoplan_current_view'
+} as const;
+
 function App() {
-  const [currentView, setCurrentView] = useState<View>('mindflow');
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [schedule, setSchedule] = useState<TimeSlot[]>([]);
+  // Initialize state from localStorage or defaults
+  const [currentView, setCurrentView] = useState<View>(() => {
+    const savedView = localStorage.getItem(STORAGE_KEYS.CURRENT_VIEW);
+    return (savedView as View) || 'mindflow';
+  });
+
+  const [tasks, setTasks] = useState<Task[]>(() => {
+    const savedTasks = localStorage.getItem(STORAGE_KEYS.TASKS);
+    return savedTasks ? JSON.parse(savedTasks) : [];
+  });
+
+  const [schedule, setSchedule] = useState<TimeSlot[]>(() => {
+    const savedSchedule = localStorage.getItem(STORAGE_KEYS.SCHEDULE);
+    return savedSchedule ? JSON.parse(savedSchedule) : [];
+  });
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Persist state changes to localStorage
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
+  }, [tasks]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.SCHEDULE, JSON.stringify(schedule));
+  }, [schedule]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.CURRENT_VIEW, currentView);
+  }, [currentView]);
 
   const views = [
     { id: 'mindflow' as View, icon: Brain, label: 'Mind Flow' },
