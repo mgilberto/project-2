@@ -144,34 +144,40 @@ function App() {
 
       <main 
         {...swipeHandlers}
-        className="max-w-7xl mx-auto py-8 mt-16 relative overflow-x-hidden"
+        className="relative mt-16 overflow-hidden"
       >
-        <div className="overflow-hidden">
+        <div className="relative w-screen">
           <div 
-            className="transition-transform duration-300 ease-in-out flex"
+            className="flex transition-transform duration-300 ease-in-out"
             style={{
-              transform: `translateX(-${currentViewIndex * 100}%)`,
-              width: '300%'
+              transform: `translateX(${-currentViewIndex * 100}vw)`,
+              width: '300vw'
             }}
           >
-            <div className="w-full px-4 sm:px-6 lg:px-8 flex-shrink-0">
-              <MindFlow
-                tasks={tasks.map(t => t.content)}
-                onTasksChange={handleTasksChange}
-              />
+            <div className="w-screen flex-shrink-0">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <MindFlow
+                  tasks={tasks.map(t => t.content)}
+                  onTasksChange={handleTasksChange}
+                />
+              </div>
             </div>
-            <div className="w-full px-4 sm:px-6 lg:px-8 flex-shrink-0">
-              <PriorityView
-                tasks={tasks}
-                onUpdateTask={updateTaskPriority}
-              />
+            <div className="w-screen flex-shrink-0">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <PriorityView
+                  tasks={tasks}
+                  onUpdateTask={updateTaskPriority}
+                />
+              </div>
             </div>
-            <div className="w-full px-4 sm:px-6 lg:px-8 flex-shrink-0">
-              <WeeklySchedule
-                tasks={tasks}
-                schedule={schedule}
-                onScheduleTask={scheduleTask}
-              />
+            <div className="w-screen flex-shrink-0">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <WeeklySchedule
+                  tasks={tasks}
+                  schedule={schedule}
+                  onScheduleTask={scheduleTask}
+                />
+              </div>
             </div>
           </div>
         </div>
